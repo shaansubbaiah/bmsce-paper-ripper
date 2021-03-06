@@ -1,0 +1,6 @@
+# created by virtualenv automatically
+.vscode
+bin
+driver
+lib
+pyvenv.cfg
