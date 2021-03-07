@@ -3,21 +3,18 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import csv
 
 # configuration options
 LIBRARY_URL = 'http://103.40.80.24:8080'
 USERNAME = 'cse1'
 PASSWORD = 'cse1'
-SEMESTER = 'Sixth'
-BRANCH = 'Computer'
+SEMESTER = 'SIXTH'
+BRANCH = 'COMPUTER'
 LAST_N_YEARS = 5
 
-
-links_dict = []
-
-
+# set webdriver to browser you intend to run this on
 driver = webdriver.Chrome()
-driver.get(LIBRARY_URL)
 
 
 def setLinksTargetToSelf():
@@ -30,13 +27,13 @@ def setLinksTargetToSelf():
     return
 
 
-def addPdfLinksToDict(exam_name, links_dict):
+def addPdfLinksToList(exam_name, links_list):
     pdf_links = driver.find_elements_by_partial_link_text('pdf')
     for pdf_link in pdf_links:
-            pdf_filename = (exam_name.replace(' ', '_') + '_' + pdf_link.text).strip()
+            pdf_filename = (exam_name + '_' + pdf_link.text).strip().replace(' ', '_')
             pdf_link_url = pdf_link.get_attribute('href')
 
-            links_dict.append({pdf_filename: pdf_link_url})
+            links_list.append([pdf_filename, pdf_link_url])
 
     driver.back()
 
@@ -44,6 +41,11 @@ def addPdfLinksToDict(exam_name, links_dict):
 
 
 def ripper():
+    print("---> Starting RIPPER")
+    links_list = []
+
+    driver.get(LIBRARY_URL)
+
     username_field = driver.find_element_by_name('loginForm.userName')
     username_field.send_keys(USERNAME)
     
@@ -57,6 +59,7 @@ def ripper():
     categories = driver.find_elements_by_class_name('cat-row-col')
 
     for category in categories:
+
         # match SEM from config
         if category.text.find(SEMESTER) > -1:
             print(f"---> Opening {category.text}")
@@ -69,6 +72,8 @@ def ripper():
                 if branch.text.find(BRANCH) > -1:
                     print(f"---> Opening {branch.text}")
                     branch.find_element_by_class_name('btn').click()
+
+                    print("---> Sourcing PDF links")
 
                     batches = driver.find_elements_by_class_name('cat-row-col')
                     batches = reversed(batches)
@@ -97,18 +102,18 @@ def ripper():
                         exam_links = []
                         for exam in exams:
                             exam_type = exam.find_element_by_xpath('./div/div/div[2]/div/h2/a')
-                            exam_link_name = (batch_name + '_' + exam_type.text).strip()
+                            exam_link_name = (batch_name + '_' + exam_type.text).strip().replace(' ', '_')
                             exam_link_url = exam_type.get_attribute('href')
 
                             exam_links.append([exam_link_name, exam_link_url])
 
                         # iterate through exam type links
                         for exam_link in exam_links:
-                            print(f'---> Adding {exam_link[0]} Papers')
+                            print(f'------> Adding {exam_link[0]} Papers')
                             driver.get(exam_link[1])
                             
                             # add links from the page to the dict
-                            addPdfLinksToDict(exam_link[0], links_dict)
+                            addPdfLinksToList(exam_link[0], links_list)
 
                             # sometimes, a second page exists
                             try:
@@ -119,7 +124,7 @@ def ripper():
 
                                     driver.find_element_by_class_name('navigationLink').click()
 
-                                    addPdfLinksToDict(exam_link[0], links_dict)
+                                    addPdfLinksToList(exam_link[0], links_list)
                             
                             except:
                                 print('Found 1 Page!')
@@ -131,10 +136,25 @@ def ripper():
             # exit after processing the batch 
             break
 
-    print(links_dict)
-    return
+    return links_list
 
-ripper()
+
+def exportToCSV(data):
+    print("---> Exporting CSV")
+
+    with open('pdf_links.csv', 'w') as csv_file:
+        csv_writer = csv.writer(csv_file, delimiter=',')
+        for e in data:
+            csv_writer.writerow(e)
+
+
+def main():
+    ripped_links = ripper()
+    exportToCSV(ripped_links) 
+
+
+if __name__ == "__main__":
+    main()
 
 
 # ░█▀▀░█░█░▀█▀░█▀▄░█▀█
