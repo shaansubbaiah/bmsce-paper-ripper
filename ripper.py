@@ -4,6 +4,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import csv
+import requests
+import os
+import re
 
 # configuration options
 LIBRARY_URL = 'http://103.40.80.24:8080'
@@ -11,7 +14,7 @@ USERNAME = 'cse1'
 PASSWORD = 'cse1'
 SEMESTER = 'SIXTH'
 BRANCH = 'COMPUTER'
-LAST_N_YEARS = 5
+LAST_N_YEARS = 1
 
 # set webdriver to browser you intend to run this on
 driver = webdriver.Chrome()
@@ -135,8 +138,11 @@ def ripper():
                     break
             # exit after processing the batch 
             break
+    
+    # return cookies to prevent session expiration errors
+    cookies = driver.get_cookies()
 
-    return links_list
+    return links_list, cookies[0]
 
 
 def exportToCSV(data):
@@ -146,11 +152,43 @@ def exportToCSV(data):
         csv_writer = csv.writer(csv_file, delimiter=',')
         for e in data:
             csv_writer.writerow(e)
+    
+    return
+
+
+def downloadPdfFiles(data, cookies):
+    print("---> Downloading PDFs")
+    
+    dir = os.path.dirname(__file__)
+
+    download_path = os.path.join(dir, 'ripped_pdfs')
+    os.makedirs(download_path, exist_ok=True)
+
+    c = {'JSESSIONID': cookies['value']}
+
+    # regex = re.compile('http.+\.pdf', re.MULTILINE)
+
+    for e in data:
+        # e[0] -> file name, e[1] -> file url
+        r = requests.get(e[1], cookies=c)
+        
+        # obtain public link from response
+        public_link = re.findall(r'http.+\.pdf', r.text)
+
+        print('public_link: ', public_link[0])
+
+        r = requests.get(public_link[0])
+        filename = os.path.join(download_path, e[0])
+        with open(filename, 'wb') as f:
+            f.write(r.content)
+
+    return
 
 
 def main():
-    ripped_links = ripper()
+    ripped_links, cookies = ripper()
     exportToCSV(ripped_links) 
+    downloadPdfFiles(ripped_links, cookies)
 
 
 if __name__ == "__main__":
