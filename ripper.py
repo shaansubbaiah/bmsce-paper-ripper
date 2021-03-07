@@ -8,6 +8,10 @@ import requests
 import os
 import re
 
+# ░█▀▀░█▀█░█▀█░█▀▀░▀█▀░█▀▀
+# ░█░░░█░█░█░█░█▀▀░░█░░█░█
+# ░▀▀▀░▀▀▀░▀░▀░▀░░░▀▀▀░▀▀▀
+
 # configuration options
 LIBRARY_URL = 'http://103.40.80.24:8080'
 USERNAME = 'cse1'
@@ -18,6 +22,11 @@ LAST_N_YEARS = 1
 
 # set webdriver to browser you intend to run this on
 driver = webdriver.Chrome()
+
+
+# ░█▀▄░▀█▀░█▀█░█▀█░█▀▀░█▀▄
+# ░█▀▄░░█░░█▀▀░█▀▀░█▀▀░█▀▄
+# ░▀░▀░▀▀▀░▀░░░▀░░░▀▀▀░▀░▀
 
 
 def setLinksTargetToSelf():
@@ -44,7 +53,7 @@ def addPdfLinksToList(exam_name, links_list):
 
 
 def ripper():
-    print("---> Starting RIPPER")
+    print("Starting Ripper")
     links_list = []
 
     driver.get(LIBRARY_URL)
@@ -141,8 +150,11 @@ def ripper():
     
     # return cookies to prevent session expiration errors
     cookies = driver.get_cookies()
+    jsession_id = cookies[0]['value']
 
-    return links_list, cookies[0]
+    driver.quit()
+
+    return links_list, jsession_id
 
 
 def exportToCSV(data):
@@ -156,7 +168,7 @@ def exportToCSV(data):
     return
 
 
-def downloadPdfFiles(data, cookies):
+def downloadPdfFiles(data, session_id):
     print("---> Downloading PDFs")
     
     dir = os.path.dirname(__file__)
@@ -164,31 +176,33 @@ def downloadPdfFiles(data, cookies):
     download_path = os.path.join(dir, 'ripped_pdfs')
     os.makedirs(download_path, exist_ok=True)
 
-    c = {'JSESSIONID': cookies['value']}
-
-    # regex = re.compile('http.+\.pdf', re.MULTILINE)
+    cookies = {'JSESSIONID': session_id}
 
     for e in data:
         # e[0] -> file name, e[1] -> file url
-        r = requests.get(e[1], cookies=c)
+        
+        r = requests.get(e[1], cookies=cookies)
         
         # obtain public link from response
         public_link = re.findall(r'http.+\.pdf', r.text)
 
-        print('public_link: ', public_link[0])
+        print(f"------> {public_link[0]}")
 
         r = requests.get(public_link[0])
         filename = os.path.join(download_path, e[0])
         with open(filename, 'wb') as f:
             f.write(r.content)
 
+    print("Ripped. 💀")
     return
 
 
 def main():
-    ripped_links, cookies = ripper()
+    ripped_links, session_id = ripper()
+
     exportToCSV(ripped_links) 
-    downloadPdfFiles(ripped_links, cookies)
+
+    downloadPdfFiles(ripped_links, session_id)
 
 
 if __name__ == "__main__":
