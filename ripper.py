@@ -4,9 +4,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+LIBRARY_URL = 'http://103.40.80.24:8080'
+USERNAME = 'cse1'
+PASSWORD = 'cse1'
+LAST_N_YEARS = 5
+
 driver = webdriver.Chrome()
 
-driver.get('http://103.40.80.24:8080')
+driver.get(LIBRARY_URL)
 
 
 links_dict = []
@@ -38,84 +43,154 @@ def addPdfLinksToDict(exam_name, links_dict):
 
 def login():
     username_field = driver.find_element_by_name('loginForm.userName')
-    username_field.send_keys('cse1')
+    username_field.send_keys(USERNAME)
     
     password_field = driver.find_element_by_name('loginForm.userPassword')
-    password_field.send_keys('cse1')
+    password_field.send_keys(PASSWORD)
     
     driver.find_element_by_tag_name('button').click()
 
-    driver.get('http://103.40.80.24:8080/browse/browseSubCategory?link=YnJvd3Nl&catCode=27283950369')
+    driver.get(LIBRARY_URL + '/browse/browseSubCategory?link=YnJvd3Nl&catCode=27283950369')
 
     categories = driver.find_elements_by_class_name('cat-row-col')
 
+    # for category in categories:
+    #     print(category.text)
+    # print('\n\n\n')
+
     for category in categories:
-        print(category.text)
+        # print(category.text)
+
         # match SEM query
         if category.text.find("SIXTH") > -1:
-            print(f"---{category.text}---")
+            print(f"---> Opening {category.text}")
             category.find_element_by_class_name('btn').click()
             
             branches = driver.find_elements_by_class_name('cat-row-col')
 
+            # for branch in branches:
+            #     print(branch.text)
+            # print('\n\n\n')
+
             for branch in branches:
-                print(branch.text)
+                # print(branch.text)
+
                 # match BRANCH
                 if branch.text.find("COMPUTER") > -1:
-                    print(f"---{branch.text}---")
+                    print(f"---> Opening {branch.text}")
                     branch.find_element_by_class_name('btn').click()
 
                     batches = driver.find_elements_by_class_name('cat-row-col')
+                    batches = reversed(batches)
 
-                    # fetch last N years papers
-                    LAST_N_YEARS = 5
-                    for batch in reversed(batches):
-                        for i in range(LAST_N_YEARS + 1):
-                            batch.find_element_by_class_name('btn').click()
-                            
-                            breadcrumb = driver.find_element_by_css_selector('li.active')
-                            batch_name = breadcrumb.text.replace(' ', '_').strip()
+                    # save last N years batches links
+                    batch_links = []
+                    for batch, _ in zip(batches, range(LAST_N_YEARS)):
+                        batch_btn = batch.find_element_by_class_name('btn')
+                        batch_links.append(batch_btn.get_attribute('href'))
 
-                            setLinksTargetToSelf()
+                    # print('\n\n batch_links:')
+                    # print(batch_links)
 
-                            # exams -> main, supplementary, makeup, etc
-                            exams = driver.find_elements_by_class_name('cat-row-col')
-
-                            for exam in exams:
-                                exam_type = exam.find_element_by_xpath('./div/div/div[2]/div/h2/a')
-                                exam_name = (batch_name + exam_type.text).strip()
-                                print(f'Adding {exam_name} Papers')
-                                
-                                driver.get(exam_type.get_attribute('href'))
-                                
-                                # add links from the page to the dict
-                                addPdfLinksToDict(exam_name, links_dict)
-
-                                # sometimes, a second page exists
-                                try:
-                                    secondPageExists = EC.presence_of_element_located((By.CLASS_NAME, 'navigationLink'))
-
-                                    if secondPageExists is True:
-                                        print('Found 2 pages!')
-
-                                        driver.find_element_by_class_name('navigationLink').click()
-
-                                        addPdfLinksToDict(exam_name, links_dict)
-                                
-                                except:
-                                    print('Found 1 Page!')
-                                
-
-                            print(links_dict)
-                                                          
-                            # driver.implicitly_wait(3)
-                            driver.back()
+                    # iterate through last N years batches links
+                    for batch_link in batch_links:
                         
+                        # WebDriverWait(driver, 20).until(
+                        #     EC.presence_of_all_elements_located((By.CLASS_NAME, "btn"))
+                        # )
+                        
+                        driver.get(batch_link)
+                        
+                        # extract batch name from the breadcrumb
+                        breadcrumb = driver.find_element_by_css_selector('li.active')
+                        batch_name = breadcrumb.text.replace(' ', '_').strip()
 
+                        # prevent links from opening in new tabs
+                        setLinksTargetToSelf()
+
+                        # exams -> main, supplementary, makeup, etc
+                        exams = driver.find_elements_by_class_name('cat-row-col')
+
+                        # save different exam type links
+                        exam_links = []
+                        for exam in exams:
+                            exam_type = exam.find_element_by_xpath('./div/div/div[2]/div/h2/a')
+                            exam_link_name = (batch_name + '_' + exam_type.text).strip()
+                            exam_link_url = exam_type.get_attribute('href')
+
+                            exam_links.append([exam_link_name, exam_link_url])
+
+                        # iterate through exam type links
+                        for exam_link in exam_links:
+                            print(f'---> Adding {exam_link[0]} Papers')
+                            driver.get(exam_link[1])
+                            
+                            # add links from the page to the dict
+                            addPdfLinksToDict(exam_link[0], links_dict)
+
+                            # sometimes, a second page exists
+                            try:
+                                secondPageExists = EC.presence_of_element_located((By.CLASS_NAME, 'navigationLink'))
+
+                                if secondPageExists is True:
+                                    print('Found 2 pages!')
+
+                                    driver.find_element_by_class_name('navigationLink').click()
+
+                                    addPdfLinksToDict(exam_link[0], links_dict)
+                            
+                            except:
+                                print('Found 1 Page!')
+                            
+
+                        # print(links_dict)
+                                                        
+                        # driver.implicitly_wait(3)
+                        driver.back()
+                        
+                    # exit after processing the branch
                     break
- 
+            # exit after processing the batch 
             break
+    
+    print(links_dict)
     
     return
 
 login()
+
+
+# ░█▀▀░█░█░▀█▀░█▀▄░█▀█
+# ░█▀▀░▄▀▄░░█░░█▀▄░█▀█
+# ░▀▀▀░▀░▀░░▀░░▀░▀░▀░▀
+
+### Valid branch parameters:
+# ARCHITECTURE
+# BIOTECHNOLOGY
+# CHEMICAL ENGINEERING
+# CIVIL ENGINEERING
+# COMPUTER SCIENCE AND INFORMATION SCIENCE
+# ELECTRICAL AND ELECTRONIC ENGINEERING
+# ELECTRONICS AND COMMUNICATION ENGINEERING
+# INDUSTRIAL ENGINEERING AND MANAGEMENT
+# INSTRUMENTATION ENGINEERING
+# MECHANICAL ENGINEERING
+# MEDICAL ELECTRONICS
+# TELECOMMUNICATION ENGINEERING
+
+### Valid semester parameters:
+# FIRST SEMESTER
+# SECOND SEMESTER
+# THIRD SEMESTER
+# FOURTH SEMESTER
+# FIFTH SEMESTER
+# SIXTH SEMESTER
+# SEVENTH SEMESTER
+# EIGHT SEMESTER
+
+### UNSUPPORTED semester parameters:
+# MATHEMATICS QUESTION PAPERS
+# MBA QUESTION PAPERS
+# MCA AUTONOMOUS QUESTION PAPERS
+# MCA VTU Question Papers
+# M.Tech QUESTION PAPERS
