@@ -4,17 +4,20 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+# configuration options
 LIBRARY_URL = 'http://103.40.80.24:8080'
 USERNAME = 'cse1'
 PASSWORD = 'cse1'
+SEMESTER = 'Sixth'
+BRANCH = 'Computer'
 LAST_N_YEARS = 5
-
-driver = webdriver.Chrome()
-
-driver.get(LIBRARY_URL)
 
 
 links_dict = []
+
+
+driver = webdriver.Chrome()
+driver.get(LIBRARY_URL)
 
 
 def setLinksTargetToSelf():
@@ -33,7 +36,6 @@ def addPdfLinksToDict(exam_name, links_dict):
             pdf_filename = (exam_name.replace(' ', '_') + '_' + pdf_link.text).strip()
             pdf_link_url = pdf_link.get_attribute('href')
 
-            # print(f'Added {pdf_filename}: {pdf_link_url}')
             links_dict.append({pdf_filename: pdf_link_url})
 
     driver.back()
@@ -41,7 +43,7 @@ def addPdfLinksToDict(exam_name, links_dict):
     return
 
 
-def login():
+def ripper():
     username_field = driver.find_element_by_name('loginForm.userName')
     username_field.send_keys(USERNAME)
     
@@ -54,29 +56,17 @@ def login():
 
     categories = driver.find_elements_by_class_name('cat-row-col')
 
-    # for category in categories:
-    #     print(category.text)
-    # print('\n\n\n')
-
     for category in categories:
-        # print(category.text)
-
-        # match SEM query
-        if category.text.find("SIXTH") > -1:
+        # match SEM from config
+        if category.text.find(SEMESTER) > -1:
             print(f"---> Opening {category.text}")
             category.find_element_by_class_name('btn').click()
             
             branches = driver.find_elements_by_class_name('cat-row-col')
 
-            # for branch in branches:
-            #     print(branch.text)
-            # print('\n\n\n')
-
             for branch in branches:
-                # print(branch.text)
-
-                # match BRANCH
-                if branch.text.find("COMPUTER") > -1:
+                # match BRANCH from config
+                if branch.text.find(BRANCH) > -1:
                     print(f"---> Opening {branch.text}")
                     branch.find_element_by_class_name('btn').click()
 
@@ -89,16 +79,8 @@ def login():
                         batch_btn = batch.find_element_by_class_name('btn')
                         batch_links.append(batch_btn.get_attribute('href'))
 
-                    # print('\n\n batch_links:')
-                    # print(batch_links)
-
                     # iterate through last N years batches links
                     for batch_link in batch_links:
-                        
-                        # WebDriverWait(driver, 20).until(
-                        #     EC.presence_of_all_elements_located((By.CLASS_NAME, "btn"))
-                        # )
-                        
                         driver.get(batch_link)
                         
                         # extract batch name from the breadcrumb
@@ -142,22 +124,17 @@ def login():
                             except:
                                 print('Found 1 Page!')
                             
-
-                        # print(links_dict)
-                                                        
-                        # driver.implicitly_wait(3)
                         driver.back()
                         
                     # exit after processing the branch
                     break
             # exit after processing the batch 
             break
-    
+
     print(links_dict)
-    
     return
 
-login()
+ripper()
 
 
 # ░█▀▀░█░█░▀█▀░█▀▄░█▀█
