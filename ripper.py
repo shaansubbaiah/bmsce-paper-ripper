@@ -13,15 +13,17 @@ import re
 # ░▀▀▀░▀▀▀░▀░▀░▀░░░▀▀▀░▀▀▀
 
 # configuration options
+# see valid config in the README/ bottom of this file
 LIBRARY_URL = 'http://103.40.80.24:8080'
-USERNAME = 'cse1'
-PASSWORD = 'cse1'
+USERNAME = 'your_username_here'
+PASSWORD = 'your_passwprd_here'
 SEMESTER = 'SIXTH'
 BRANCH = 'COMPUTER'
-LAST_N_YEARS = 1
+LAST_N_YEARS = 3
 
 # set webdriver to browser you intend to run this on
 driver = webdriver.Chrome()
+# driver = webdriver.Firefox()
 
 
 # ░█▀▄░▀█▀░█▀█░█▀█░█▀▀░█▀▄
