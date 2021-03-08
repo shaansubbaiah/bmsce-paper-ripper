@@ -87,3 +87,5 @@ LAST_N_YEARS = n years papers to rip (Integer), ideally 1-5
 # MCA VTU Question Papers
 # M.Tech QUESTION PAPERS
 ```
+
+[![HitCount](http://hits.dwyl.com/shaansubbaiah/bmsce-paper-ripper.svg)](http://hits.dwyl.com/shaansubbaiah/bmsce-paper-ripper)

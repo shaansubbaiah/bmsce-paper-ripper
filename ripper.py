@@ -16,10 +16,10 @@ import re
 # see valid config in the README/ bottom of this file
 LIBRARY_URL = 'http://103.40.80.24:8080'
 USERNAME = 'your_username_here'
-PASSWORD = 'your_passwprd_here'
+PASSWORD = 'your_password_here'
 SEMESTER = 'SIXTH'
 BRANCH = 'COMPUTER'
-LAST_N_YEARS = 3
+LAST_N_YEARS = 2
 
 # set webdriver to browser you intend to run this on
 driver = webdriver.Chrome()
@@ -55,7 +55,6 @@ def addPdfLinksToList(exam_name, links_list):
 
 
 def ripper():
-    print("Starting Ripper")
     links_list = []
 
     driver.get(LIBRARY_URL)
@@ -151,12 +150,31 @@ def ripper():
             break
     
     # return cookies to prevent session expiration errors
+    # here, only the jsession id is required
     cookies = driver.get_cookies()
     jsession_id = cookies[0]['value']
 
     driver.quit()
 
     return links_list, jsession_id
+
+
+def getPublicLinks(data, session_id):
+    print("---> Extracting PUBLIC LINKS")
+
+    cookies = {'JSESSIONID': session_id}
+
+    # e[0] -> file name, e[1] -> non public file url
+    for e in data:
+        r = requests.get(e[1], cookies=cookies)
+        
+        # obtain public link from response
+        public_links = re.findall(r'http.+\.pdf', r.text)
+
+        # replace non-public with public link
+        e[1] = public_links[0]
+
+    return data
 
 
 def exportToCSV(data):
@@ -170,7 +188,7 @@ def exportToCSV(data):
     return
 
 
-def downloadPdfFiles(data, session_id):
+def downloadPdfFiles(data):
     print("---> Downloading PDFs")
     
     dir = os.path.dirname(__file__)
@@ -178,33 +196,33 @@ def downloadPdfFiles(data, session_id):
     download_path = os.path.join(dir, 'ripped_pdfs')
     os.makedirs(download_path, exist_ok=True)
 
-    cookies = {'JSESSIONID': session_id}
-
+    # e[0] -> file name, e[1] -> file url
     for e in data:
-        # e[0] -> file name, e[1] -> file url
-        
-        r = requests.get(e[1], cookies=cookies)
-        
-        # obtain public link from response
-        public_link = re.findall(r'http.+\.pdf', r.text)
+        r = requests.get(e[1])
 
-        print(f"------> {public_link[0]}")
-
-        r = requests.get(public_link[0])
         filename = os.path.join(download_path, e[0])
         with open(filename, 'wb') as f:
             f.write(r.content)
 
-    print("Ripped. 💀")
     return
 
 
 def main():
-    ripped_links, session_id = ripper()
+    print("Starting Ripper")
 
-    exportToCSV(ripped_links) 
+    data, session_id = ripper()
 
-    downloadPdfFiles(ripped_links, session_id)
+    # Turns out the file link obtained from ripper() redirects to
+    # another page with the public file link (which does not require
+    # an authenticated session)
+    # This function extracts the public urls before saving to CSV
+    public_link_data = getPublicLinks(data, session_id)
+
+    exportToCSV(public_link_data) 
+
+    downloadPdfFiles(public_link_data)
+
+    print("Ripped. 💀")
 
 
 if __name__ == "__main__":
