@@ -15,6 +15,15 @@
 - Renames the files with the exam type and year held
 - Papers from different years of a particular subject are placed in a common folder
 
+## Setup
+
+- Clone the repo `git clone https://github.com/shaansubbaiah/bmsce-paper-ripper.git`
+- Run `pip install -r requirements.txt`
+- Set the branch, sem, etc in `ripper.py`
+- Run `python ripper.py`
+
+NOTE: In case you get an issue due chromedriver not being present in PATH, try following [this tutorial to add it to your path](https://zwbetz.com/download-chromedriver-binary-and-add-to-your-path-for-automated-functional-testing/)
+
 ## TODO
 
 - Download files asynchronously
@@ -43,19 +52,6 @@ Ripped. 💀
 Example folder structure generated
 
 ![output files pic](./assets/output_files_pic.png)
-
-## Setup
-
-- Clone the repo `git clone https://github.com/shaansubbaiah/bmsce-paper-ripper.git`
-- Run `pip install -r requirements.txt`
-- Set the branch, sem, etc in `ripper.py`
-- Run `python ripper.py`
-
-NOTE: In case you dont have the web driver for your browser in your PATH, get it here
-
-`Chrome: https://sites.google.com/a/chromium.org/chromedriver/downloads`
-
-`Firefox: https://github.com/mozilla/geckodriver/releases`
 
 ## Config
 
@@ -100,5 +96,3 @@ LAST_N_YEARS = n years papers to rip (Integer), ideally 1-5
 # MCA VTU Question Papers
 # M.Tech QUESTION PAPERS
 ```
-
-[![HitCount](http://hits.dwyl.com/shaansubbaiah/bmsce-paper-ripper.svg)](http://hits.dwyl.com/shaansubbaiah/bmsce-paper-ripper)
