@@ -1,36 +1,48 @@
-<h2 align="center"> BMSCE Paper Ripper </h2>
+<h2 align="center"> BMSCE Question Paper Ripper </h2>
 <p align="center">
   <strong>
-  Rip papers from the elibrary automatically in seconds.
+  Rip previous year question papers from the e-library automatically in seconds.
   </strong>
   <br>
   Saves around `7+5*(3*15) = 232` clicks on average when trying to download the last 5 years papers for a particular subject of a branch.
-  <br>
-  Downloads the papers in PDF fromat to `/ripped_pds' folder and exports the links to CSV.
 </p>
 
-Output for default config (last 1 year's papers)
+## Features
+
+- Much faster than manually navigating, downloading from the site
+- Download specifying the Branch, Semester and last N years to retrieve papers
+- Exports a list of public paper urls to CSV
+- Renames the files with the exam type and year held
+- Papers from different years of a particular subject are placed in a common folder
+
+## TODO
+
+- Download files asynchronously
+- Download papers of only a particular subject
+
+Example Terminal Output
 
 ```
 Starting Ripper
 ---> Opening SIXTH SEMESTER
 ---> Opening COMPUTER SCIENCE AND INFORMATION SCIENCE
 ---> Sourcing PDF links
-------> Adding 2019_AND_2020_SUPPLEMENTARY_EXAMINATIONS Papers
+------> Adding 2019-20_SUPPLEMENTARY Papers
+------> Adding 2018-19_SUPPLEMENTARY Papers
+------> Adding 2018-19_SEMESTER_MAKE_UP Papers
+------> Adding 2018-19_MAIN_EXAMINATION Papers
+------> Adding 2017-18_MAKE_UP Papers
+------> Adding 2017-18_MAIN Papers
+------> Adding 2017-18_SUPPLEMENTARY Papers
+---> Extracting PUBLIC LINKS
 ---> Exporting CSV
 ---> Downloading PDFs
-------> http://103.40.80.24/cdhome/221/379/390/1202/4043_img/16IS6DCSEO.pdf
-------> http://103.40.80.24/cdhome/221/379/390/1202/4043_img/16CS6DCOOM.pdf
-------> http://103.40.80.24/cdhome/221/379/390/1202/4043_img/16IS6DCSNA.pdf
-------> http://103.40.80.24/cdhome/221/379/390/1202/4043_img/16IS6DEMLG.pdf
-------> http://103.40.80.24/cdhome/221/379/390/1202/4043_img/16CS6DECNS.pdf
-------> http://103.40.80.24/cdhome/221/379/390/1202/4043_img/16CS6DCTFC.pdf
-------> http://103.40.80.24/cdhome/221/379/390/1202/4043_img/16CS6DEFLN.pdf
-------> http://103.40.80.24/cdhome/221/379/390/1202/4043_img/16CS6DCMAD.pdf
-------> http://103.40.80.24/cdhome/221/379/390/1202/4043_img/16CS6DEAIN.pdf
-------> http://103.40.80.24/cdhome/221/379/390/1202/4043_img/16IS6DCCDN.pdf
 Ripped. 💀
 ```
+
+Example folder structure generated
+
+![output files pic](./assets/output_files_pic.png)
 
 ## Setup
 
@@ -42,6 +54,7 @@ Ripped. 💀
 NOTE: In case you dont have the web driver for your browser in your PATH, get it here
 
 `Chrome: https://sites.google.com/a/chromium.org/chromedriver/downloads`
+
 `Firefox: https://github.com/mozilla/geckodriver/releases`
 
 ## Config

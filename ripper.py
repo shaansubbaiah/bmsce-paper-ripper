@@ -19,7 +19,7 @@ USERNAME = 'your_username_here'
 PASSWORD = 'your_password_here'
 SEMESTER = 'SIXTH'
 BRANCH = 'COMPUTER'
-LAST_N_YEARS = 2
+LAST_N_YEARS = 3
 
 # set webdriver to browser you intend to run this on
 driver = webdriver.Chrome()
@@ -115,8 +115,14 @@ def ripper():
                         exam_links = []
                         for exam in exams:
                             exam_type = exam.find_element_by_xpath('./div/div/div[2]/div/h2/a')
-                            exam_link_name = (batch_name + '_' + exam_type.text).strip().replace(' ', '_')
                             exam_link_url = exam_type.get_attribute('href')
+
+                            # minimize batch name '2018 AND 2019' to '2018-19'
+                            batch_name = (batch_name[:4] + '-' + batch_name[-2:]).strip()
+                            # minimize exam name 'SEMESTER_END_MAIN_EXAMINATION' to 'MAIN'
+                            exam_type_name = exam_type.text.replace('SEMESTER END', '').replace('EXAMINATIONS', '').strip()
+                            
+                            exam_link_name = (batch_name + '_' + exam_type_name).replace(' ', '_')
 
                             exam_links.append([exam_link_name, exam_link_url])
 
@@ -193,14 +199,22 @@ def downloadPdfFiles(data):
     
     dir = os.path.dirname(__file__)
 
-    download_path = os.path.join(dir, 'ripped_pdfs')
-    os.makedirs(download_path, exist_ok=True)
+    download_dir = os.path.join(dir, 'ripped_pdfs')
+    os.makedirs(download_dir, exist_ok=True)
 
     # e[0] -> file name, e[1] -> file url
     for e in data:
-        r = requests.get(e[1])
-
+        # extract subject/folder name from filename
+        # '2018-19_MAIN_EXAMINATION_16IS6DCCNS.pdf' to 'CNS'
+        folder_name = e[0][-7:-4]
+        download_path = os.path.join(download_dir, folder_name)
+        
+        # make the subject folder if it doesnt exist already
+        os.makedirs(download_path, exist_ok=True)
+        
         filename = os.path.join(download_path, e[0])
+
+        r = requests.get(e[1])
         with open(filename, 'wb') as f:
             f.write(r.content)
 
