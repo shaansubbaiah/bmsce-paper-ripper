@@ -65,6 +65,10 @@ def ripper():
     
     driver.find_element_by_tag_name('button').click()
 
+    # check if login was succesful
+    if driver.current_url is not (LIBRARY_URL + '/browse/browseCategory'):
+        screamErrorAndQuit('login details are incorrect!')
+
     driver.get(LIBRARY_URL + '/browse/browseSubCategory?link=YnJvd3Nl&catCode=27283950369')
 
     categories = driver.find_elements_by_class_name('cat-row-col')
