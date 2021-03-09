@@ -16,7 +16,7 @@ import re
 # see valid config in the README/ bottom of this file
 LIBRARY_URL = 'http://103.40.80.24:8080'
 USERNAME = 'cse1'
-PASSWORD = 'cse1'
+PASSWORD = 'cse12'
 SEMESTER = 'SIXTH'
 BRANCH = 'COMPUTER'
 LAST_N_YEARS = 2
@@ -51,6 +51,11 @@ def addPdfLinksToList(exam_name, links_list):
 
     return
 
+def screamErrorAndQuit(msg):
+    print(f'ERROR: {msg}')
+    driver.quit()
+    exit(1)
+
 
 def ripper():
     links_list = []
@@ -71,103 +76,194 @@ def ripper():
 
     driver.get(LIBRARY_URL + '/browse/browseSubCategory?link=YnJvd3Nl&catCode=27283950369')
 
-    categories = driver.find_elements_by_class_name('cat-row-col')
+    try:
+        semester_category = driver.find_element_by_partial_link_text(SEMESTER)
+        print(f"---> Opening {semester_category.text}")
+        semester_category.click()
+        
+        try:
+            branch_category = driver.find_element_by_partial_link_text(BRANCH)
+            print(f"---> Opening {branch_category.text}")
+            branch_category.click()
 
-    for category in categories:
+            # find batch divs eg. '2019 and 2020', '2018 and 2019', etc
+            batches = driver.find_elements_by_class_name('cat-row-col')
+            batches = reversed(batches)
 
-        # match SEM from config
-        if category.text.find(SEMESTER) > -1:
-            print(f"---> Opening {category.text}")
-            category.find_element_by_class_name('btn').click()
-            
-            branches = driver.find_elements_by_class_name('cat-row-col')
+            # save last N years batches links
+            batch_links = []
+            for batch, _ in zip(batches, range(LAST_N_YEARS)):
+                batch_btn = batch.find_element_by_class_name('btn')
+                batch_links.append(batch_btn.get_attribute('href'))
 
-            for branch in branches:
-                # match BRANCH from config
-                if branch.text.find(BRANCH) > -1:
-                    print(f"---> Opening {branch.text}")
-                    branch.find_element_by_class_name('btn').click()
+            # iterate through last N years batches links
+            for batch_link in batch_links:
+                driver.get(batch_link)
+                
+                # extract batch name from the breadcrumb
+                breadcrumb = driver.find_element_by_css_selector('li.active')
+                batch_name = breadcrumb.text.replace(' ', '_').strip()
 
-                    print("---> Sourcing PDF links")
+                # prevent links from opening in new tabs
+                setLinksTargetToSelf()
 
-                    batches = driver.find_elements_by_class_name('cat-row-col')
-                    batches = reversed(batches)
+                # exams -> main, supplementary, makeup, etc
+                exams = driver.find_elements_by_class_name('cat-row-col')
 
-                    # save last N years batches links
-                    batch_links = []
-                    for batch, _ in zip(batches, range(LAST_N_YEARS)):
-                        batch_btn = batch.find_element_by_class_name('btn')
-                        batch_links.append(batch_btn.get_attribute('href'))
+                # save different exam type links
+                exam_links = []
+                for exam in exams:
+                    exam_type = exam.find_element_by_xpath('./div/div/div[2]/div/h2/a')
+                    exam_link_url = exam_type.get_attribute('href')
 
-                    # iterate through last N years batches links
-                    for batch_link in batch_links:
-                        driver.get(batch_link)
-                        
-                        # extract batch name from the breadcrumb
-                        breadcrumb = driver.find_element_by_css_selector('li.active')
-                        batch_name = breadcrumb.text.replace(' ', '_').strip()
+                    # minimize batch name '2018 AND 2019' to '2018-19'
+                    batch_name = (batch_name[:4] + '-' + batch_name[-2:]).strip()
+                    # minimize exam name 'SEMESTER_END_MAIN_EXAMINATION' to 'MAIN'
+                    exam_type_name = exam_type.text.replace('SEMESTER END', '').replace('EXAMINATIONS', '').strip()
+                    
+                    exam_link_name = (batch_name + '_' + exam_type_name).replace(' ', '_')
 
-                        # prevent links from opening in new tabs
-                        setLinksTargetToSelf()
+                    exam_links.append([exam_link_name, exam_link_url])
 
-                        # exams -> main, supplementary, makeup, etc
-                        exams = driver.find_elements_by_class_name('cat-row-col')
+                # iterate through exam type links
+                for exam_link in exam_links:
+                    print(f'------> Adding {exam_link[0]} Papers')
+                    driver.get(exam_link[1])
 
-                        # save different exam type links
-                        exam_links = []
-                        for exam in exams:
-                            exam_type = exam.find_element_by_xpath('./div/div/div[2]/div/h2/a')
-                            exam_link_url = exam_type.get_attribute('href')
+                    try:
+                        pagination_exists = driver.find_element_by_class_name('pagination')
+                        pagination_exists = True
+                    except:
+                        pagination_exists = False
 
-                            # minimize batch name '2018 AND 2019' to '2018-19'
-                            batch_name = (batch_name[:4] + '-' + batch_name[-2:]).strip()
-                            # minimize exam name 'SEMESTER_END_MAIN_EXAMINATION' to 'MAIN'
-                            exam_type_name = exam_type.text.replace('SEMESTER END', '').replace('EXAMINATIONS', '').strip()
-                            
-                            exam_link_name = (batch_name + '_' + exam_type_name).replace(' ', '_')
+                    cur_page = 1
 
-                            exam_links.append([exam_link_name, exam_link_url])
-
-                        # iterate through exam type links
-                        for exam_link in exam_links:
-                            print(f'------> Adding {exam_link[0]} Papers')
-                            driver.get(exam_link[1])
-
+                    # add links from the first page
+                    print(f'---------> page {cur_page}', end =" ")
+                    addPdfLinksToList(exam_link[0], links_list)
+                    
+                    # if pagination exists, iterate, add links from the other pages
+                    if pagination_exists:
+                        while(True):
+                            cur_page += 1
                             try:
-                                pagination_exists = driver.find_element_by_class_name('pagination')
-                                pagination_exists = True
+                                next_page = driver.find_element_by_link_text(str(cur_page))
+                                next_page.click()
+
+                                print(cur_page, end =" ")
+
+                                addPdfLinksToList(exam_link[0], links_list)
                             except:
-                                pagination_exists = False
+                                break
+                    print('')
+                    # no need to go back a page, urls to the exam types are saved
+                    # above, we directly go to them
+                    
+                # go back to the list of batches
+                driver.back()
 
-                            cur_page = 1
+        except:
+            screamErrorAndQuit(f'Could not find branch matching \"{BRANCH}\"!')
+        
+    except:
+        screamErrorAndQuit(f'Could not find semester matching \"{SEMESTER}\"!')
 
-                            # add links from the first page
-                            print(f'---------> page {cur_page}', end =" ")
-                            addPdfLinksToList(exam_link[0], links_list)
+
+    # for category in categories:
+
+    #     # match SEM from config
+    #     if category.text.find(SEMESTER) > -1:
+    #         print(f"---> Opening {category.text}")
+    #         category.find_element_by_class_name('btn').click()
+            
+    #         branches = driver.find_elements_by_class_name('cat-row-col')
+
+    #         for branch in branches:
+    #             # match BRANCH from config
+    #             if branch.text.find(BRANCH) > -1:
+    #                 print(f"---> Opening {branch.text}")
+    #                 branch.find_element_by_class_name('btn').click()
+
+    #                 print("---> Sourcing PDF links")
+
+    #                 batches = driver.find_elements_by_class_name('cat-row-col')
+    #                 batches = reversed(batches)
+
+    #                 # save last N years batches links
+    #                 batch_links = []
+    #                 for batch, _ in zip(batches, range(LAST_N_YEARS)):
+    #                     batch_btn = batch.find_element_by_class_name('btn')
+    #                     batch_links.append(batch_btn.get_attribute('href'))
+
+    #                 # iterate through last N years batches links
+    #                 for batch_link in batch_links:
+    #                     driver.get(batch_link)
+                        
+    #                     # extract batch name from the breadcrumb
+    #                     breadcrumb = driver.find_element_by_css_selector('li.active')
+    #                     batch_name = breadcrumb.text.replace(' ', '_').strip()
+
+    #                     # prevent links from opening in new tabs
+    #                     setLinksTargetToSelf()
+
+    #                     # exams -> main, supplementary, makeup, etc
+    #                     exams = driver.find_elements_by_class_name('cat-row-col')
+
+    #                     # save different exam type links
+    #                     exam_links = []
+    #                     for exam in exams:
+    #                         exam_type = exam.find_element_by_xpath('./div/div/div[2]/div/h2/a')
+    #                         exam_link_url = exam_type.get_attribute('href')
+
+    #                         # minimize batch name '2018 AND 2019' to '2018-19'
+    #                         batch_name = (batch_name[:4] + '-' + batch_name[-2:]).strip()
+    #                         # minimize exam name 'SEMESTER_END_MAIN_EXAMINATION' to 'MAIN'
+    #                         exam_type_name = exam_type.text.replace('SEMESTER END', '').replace('EXAMINATIONS', '').strip()
                             
-                            # if pagination exists, iterate, add links from the other pages
-                            if pagination_exists:
-                                while(True):
-                                    cur_page += 1
-                                    try:
-                                        next_page = driver.find_element_by_link_text(str(cur_page))
-                                        next_page.click()
+    #                         exam_link_name = (batch_name + '_' + exam_type_name).replace(' ', '_')
 
-                                        print(cur_page, end =" ")
+    #                         exam_links.append([exam_link_name, exam_link_url])
 
-                                        addPdfLinksToList(exam_link[0], links_list)
-                                    except:
-                                        break
-                            print('')
-                            # no need to go back a page, urls to the exam types are saved
-                            # above, we directly go to them
+    #                     # iterate through exam type links
+    #                     for exam_link in exam_links:
+    #                         print(f'------> Adding {exam_link[0]} Papers')
+    #                         driver.get(exam_link[1])
+
+    #                         try:
+    #                             pagination_exists = driver.find_element_by_class_name('pagination')
+    #                             pagination_exists = True
+    #                         except:
+    #                             pagination_exists = False
+
+    #                         cur_page = 1
+
+    #                         # add links from the first page
+    #                         print(f'---------> page {cur_page}', end =" ")
+    #                         addPdfLinksToList(exam_link[0], links_list)
                             
-                        # go back to the list of batches
-                        driver.back()
-                    # exit after processing the branch
-                    break
-            # exit after processing the batch 
-            break
+    #                         # if pagination exists, iterate, add links from the other pages
+    #                         if pagination_exists:
+    #                             while(True):
+    #                                 cur_page += 1
+    #                                 try:
+    #                                     next_page = driver.find_element_by_link_text(str(cur_page))
+    #                                     next_page.click()
+
+    #                                     print(cur_page, end =" ")
+
+    #                                     addPdfLinksToList(exam_link[0], links_list)
+    #                                 except:
+    #                                     break
+    #                         print('')
+    #                         # no need to go back a page, urls to the exam types are saved
+    #                         # above, we directly go to them
+                            
+    #                     # go back to the list of batches
+    #                     driver.back()
+    #                 # exit after processing the branch
+    #                 break
+    #         # exit after processing the batch 
+    #         break
     
     # return cookies to prevent session expiration errors
     # here, only the jsession id is required
@@ -244,11 +340,11 @@ def main():
     # another page with the public file link (which does not require
     # an authenticated session)
     # This function extracts the public urls before saving to CSV
-    public_link_data = getPublicLinks(data, session_id)
+    # public_link_data = getPublicLinks(data, session_id)
 
-    exportToCSV(public_link_data) 
+    # exportToCSV(public_link_data) 
 
-    downloadPdfFiles(public_link_data)
+    # downloadPdfFiles(public_link_data)
 
     print("Ripped. 💀")
 
