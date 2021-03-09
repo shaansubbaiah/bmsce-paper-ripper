@@ -15,11 +15,11 @@ import re
 # configuration options
 # see valid config in the README/ bottom of this file
 LIBRARY_URL = 'http://103.40.80.24:8080'
-USERNAME = 'your_username_here'
-PASSWORD = 'your_password_here'
+USERNAME = 'cse1'
+PASSWORD = 'cse1'
 SEMESTER = 'SIXTH'
 BRANCH = 'COMPUTER'
-LAST_N_YEARS = 3
+LAST_N_YEARS = 2
 
 # set webdriver to browser you intend to run this on
 driver = webdriver.Chrome()
@@ -48,8 +48,6 @@ def addPdfLinksToList(exam_name, links_list):
             pdf_link_url = pdf_link.get_attribute('href')
 
             links_list.append([pdf_filename, pdf_link_url])
-
-    driver.back()
 
     return
 
@@ -130,26 +128,38 @@ def ripper():
                         for exam_link in exam_links:
                             print(f'------> Adding {exam_link[0]} Papers')
                             driver.get(exam_link[1])
-                            
-                            # add links from the page to the dict
-                            addPdfLinksToList(exam_link[0], links_list)
 
-                            # sometimes, a second page exists
                             try:
-                                secondPageExists = EC.presence_of_element_located((By.CLASS_NAME, 'navigationLink'))
-
-                                if secondPageExists is True:
-                                    print('Found 2 pages!')
-
-                                    driver.find_element_by_class_name('navigationLink').click()
-
-                                    addPdfLinksToList(exam_link[0], links_list)
-                            
+                                pagination_exists = driver.find_element_by_class_name('pagination')
+                                pagination_exists = True
                             except:
-                                print('Found 1 Page!')
+                                pagination_exists = False
+
+                            cur_page = 1
+
+                            # add links from the first page
+                            print(f'---------> page {cur_page}', end =" ")
+                            addPdfLinksToList(exam_link[0], links_list)
                             
+                            # if pagination exists, iterate, add links from the other pages
+                            if pagination_exists:
+                                while(True):
+                                    cur_page += 1
+                                    try:
+                                        next_page = driver.find_element_by_link_text(str(cur_page))
+                                        next_page.click()
+
+                                        print(cur_page, end =" ")
+
+                                        addPdfLinksToList(exam_link[0], links_list)
+                                    except:
+                                        break
+                            print('')
+                            # no need to go back a page, urls to the exam types are saved
+                            # above, we directly go to them
+                            
+                        # go back to the list of batches
                         driver.back()
-                        
                     # exit after processing the branch
                     break
             # exit after processing the batch 
