@@ -16,7 +16,7 @@ import re
 # see valid config in the README/ bottom of this file
 LIBRARY_URL = 'http://103.40.80.24:8080'
 USERNAME = 'cse1'
-PASSWORD = 'cse12'
+PASSWORD = 'cse1'
 SEMESTER = 'SIXTH'
 BRANCH = 'COMPUTER'
 LAST_N_YEARS = 2
