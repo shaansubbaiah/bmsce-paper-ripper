@@ -4,5 +4,8 @@ bin
 driver
 lib
 pyvenv.cfg
+# ignore ripped data
 pdf_links*
 ripped_pdfs
+# ignore test file
+test.py

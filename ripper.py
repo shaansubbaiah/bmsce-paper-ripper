@@ -7,6 +7,8 @@ import csv
 import requests
 import os
 import re
+from time import time as timer
+import threading
 
 # ░█▀▀░█▀█░█▀█░█▀▀░▀█▀░█▀▀
 # ░█░░░█░█░█░█░█▀▀░░█░░█░█
@@ -186,21 +188,30 @@ def ripper():
     return links_list, jsession_id
 
 
-def getPublicLinks(data, session_id):
+def extractPublicLink(file_url, cookies):
+    r = requests.get(file_url, cookies=cookies)
+        
+    # obtain public link from response
+    public_links = re.findall(r'http.+\.pdf', r.text)
+
+    # replace non-public with public link
+    file_url = public_links[0]
+
+    return
+
+
+def convertToPublicLinks(data, session_id):
+    s_c = timer()
     print("---> Extracting PUBLIC LINKS")
 
     cookies = {'JSESSIONID': session_id}
 
     # e[0] -> file name, e[1] -> non public file url
     for e in data:
-        r = requests.get(e[1], cookies=cookies)
-        
-        # obtain public link from response
-        public_links = re.findall(r'http.+\.pdf', r.text)
-
-        # replace non-public with public link
-        e[1] = public_links[0]
-
+        processThread = threading.Thread(target=extractPublicLink, args=(e[1], cookies))
+        processThread.start()
+    
+    print(f"------> took {(timer() - s_c):4.3f}s")
     return data
 
 
@@ -215,34 +226,43 @@ def exportToCSV(data):
     return
 
 
+def downloadFile(file_name, file_url, download_dir):
+    # extract subject/folder name from filename
+    # '2018-19_MAIN_EXAMINATION_16IS6DCCNS.pdf' to 'CNS'
+    folder_name = file_name[-7:-4]
+    download_path = os.path.join(download_dir, folder_name)
+    
+    # make the subject folder if it doesnt exist already
+    os.makedirs(download_path, exist_ok=True)
+    
+    filename = os.path.join(download_path, file_name)
+
+    r = requests.get(file_url)
+    with open(filename, 'wb') as f:
+        f.write(r.content)
+    
+    return
+
+
 def downloadPdfFiles(data):
+    s_d = timer()
     print("---> Downloading PDFs")
     
     dir = os.path.dirname(__file__)
-
     download_dir = os.path.join(dir, 'ripped_pdfs')
     os.makedirs(download_dir, exist_ok=True)
 
     # e[0] -> file name, e[1] -> file url
     for e in data:
-        # extract subject/folder name from filename
-        # '2018-19_MAIN_EXAMINATION_16IS6DCCNS.pdf' to 'CNS'
-        folder_name = e[0][-7:-4]
-        download_path = os.path.join(download_dir, folder_name)
-        
-        # make the subject folder if it doesnt exist already
-        os.makedirs(download_path, exist_ok=True)
-        
-        filename = os.path.join(download_path, e[0])
+        processThread = threading.Thread(target=downloadFile, args=(e[0], e[1], download_dir))
+        processThread.start()
 
-        r = requests.get(e[1])
-        with open(filename, 'wb') as f:
-            f.write(r.content)
-
+    print(f"------> took {(timer() - s_d):4.3f}s")
     return
 
 
 def main():
+    s_m = timer()
     print("Starting Ripper")
 
     data, session_id = ripper()
@@ -251,13 +271,13 @@ def main():
     # another page with the public file link (which does not require
     # an authenticated session)
     # This function extracts the public urls before saving to CSV
-    public_link_data = getPublicLinks(data, session_id)
+    public_link_data = convertToPublicLinks(data, session_id)
 
     exportToCSV(public_link_data) 
 
     downloadPdfFiles(public_link_data)
 
-    print("Ripped. 💀")
+    print(f'Ripped. 💀. Took {(timer() - s_m):4.3f}s')
 
 
 if __name__ == "__main__":
