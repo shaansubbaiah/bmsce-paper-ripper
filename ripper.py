@@ -19,6 +19,9 @@ USERNAME = 'cse1'
 PASSWORD = 'cse1'
 SEMESTER = 'SIXTH SEMESTER'
 BRANCH = 'COMPUTER SCIENCE'
+# 3 letter course short code eg.'TFC' for 16CS6DCTFC.pdf
+# Leave empty to rip papers for every course 
+COURSE = ''
 LAST_N_YEARS = 2
 
 # set webdriver to browser you intend to run this on
@@ -41,15 +44,15 @@ def setLinksTargetToSelf():
     return
 
 
-def addPdfLinksToList(exam_name, links_list):
-    pdf_links = driver.find_elements_by_partial_link_text('pdf')
+def addPdfLinksToList(exam_name, links_list, course_code):
+    pdf_links = driver.find_elements_by_partial_link_text(f'{course_code}.pdf')
     for pdf_link in pdf_links:
-            pdf_filename = (exam_name + '_' + pdf_link.text).strip().replace(' ', '_')
-            pdf_link_url = pdf_link.get_attribute('href')
+        pdf_filename = (exam_name + '_' + pdf_link.text).strip().replace(' ', '_')
+        pdf_link_url = pdf_link.get_attribute('href')
 
-            links_list.append([pdf_filename, pdf_link_url])
-
+        links_list.append([pdf_filename, pdf_link_url])
     return
+
 
 def screamErrorAndQuit(msg):
     print(f'ERROR: {msg}')
@@ -145,7 +148,7 @@ def ripper():
 
                     # add links from the first page
                     print(f'---------> page {cur_page}', end =" ")
-                    addPdfLinksToList(exam_link[0], links_list)
+                    addPdfLinksToList(exam_link[0], links_list, COURSE)
                     
                     # if pagination exists, iterate, add links from the other pages
                     if pagination_exists:
@@ -157,7 +160,7 @@ def ripper():
 
                                 print(cur_page, end =" ")
 
-                                addPdfLinksToList(exam_link[0], links_list)
+                                addPdfLinksToList(exam_link[0], links_list, COURSE)
                             except:
                                 break
                     print('')
