@@ -34,10 +34,10 @@
 
 - Clone the repo `git clone https://github.com/shaansubbaiah/bmsce-paper-ripper.git`
 - Run `pip install -r requirements.txt`
+- Download chromedriver from https://chromedriver.chromium.org/downloads
+- Extract it and put it in the /bmsce-paper-ripper directory
 - Set the COURSE, BRANCH, SEMESTER, etc values in `ripper.py`
 - Run `python ripper.py`
-
-NOTE: In case you get an issue due the webdriver not being present in PATH, try following [this tutorial to add it to your path](https://zwbetz.com/download-chromedriver-binary-and-add-to-your-path-for-automated-functional-testing/)
 
 ## Config
 
