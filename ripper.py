@@ -9,6 +9,8 @@ import os
 import re
 from time import time as timer
 import threading
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ░█▀▀░█▀█░█▀█░█▀▀░▀█▀░█▀▀
 # ░█░░░█░█░█░█░█▀▀░░█░░█░█
@@ -52,7 +54,8 @@ def addPdfLinksToList(exam_name, links_list, course_code):
         pdf_filename = (exam_name + '_' + pdf_link.text).strip().replace(' ', '_')
         pdf_link_url = pdf_link.get_attribute('href')
 
-        links_list.append([pdf_filename, pdf_link_url])
+        # links_list.append([pdf_filename, pdf_link_url])
+        links_list[pdf_filename] = pdf_link_url
     return
 
 
@@ -63,7 +66,7 @@ def screamErrorAndQuit(msg):
 
 
 def ripper():
-    links_list = []
+    links_list = {}
 
     driver.get(LIBRARY_URL)
 
@@ -185,19 +188,23 @@ def ripper():
 
     driver.quit()
 
+    print(links_list)
+    # exit(1)
+
     return links_list, jsession_id
 
 
-def extractPublicLink(file_url, cookies):
+def extractPublicLink(file_name, file_url, cookies):
     r = requests.get(file_url, cookies=cookies)
         
     # obtain public link from response
     public_links = re.findall(r'http.+\.pdf', r.text)
-
+    # print(public_links)
     # replace non-public with public link
     file_url = public_links[0]
 
-    return
+    # return public_links[0]
+    return {file_name: file_url}
 
 
 def convertToPublicLinks(data, session_id):
@@ -205,14 +212,27 @@ def convertToPublicLinks(data, session_id):
     print("---> Extracting PUBLIC LINKS")
 
     cookies = {'JSESSIONID': session_id}
+    # print(cookies)
 
     # e[0] -> file name, e[1] -> non public file url
-    for e in data:
-        processThread = threading.Thread(target=extractPublicLink, args=(e[1], cookies))
-        processThread.start()
-    
+    # for e in data:
+    #     processThread = threading.Thread(target=extractPublicLink, args=(e[1], cookies))
+    #     processThread.start()
+    # print('yeyey')
+    public_data = {}
+    with ThreadPoolExecutor(max_workers=None) as executor:
+        futures = []
+        for e in data:
+            futures.append(executor.submit(extractPublicLink, e, data[e], cookies))
+        
+        for future in as_completed(futures):
+            # print(future.result())
+            public_data.update(future.result())
     print(f"------> took {(timer() - s_c):4.3f}s")
-    return data
+    print("public links are:")
+    print(public_data)
+    # exit(1)
+    return public_data
 
 
 def exportToCSV(data):
@@ -221,8 +241,9 @@ def exportToCSV(data):
     with open('pdf_links.csv', 'w') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=',')
         for e in data:
-            csv_writer.writerow(e)
-    
+            # print(e)
+            csv_writer.writerow([e, data[e]])
+    # exit(1)
     return
 
 
@@ -253,9 +274,19 @@ def downloadPdfFiles(data):
     os.makedirs(download_dir, exist_ok=True)
 
     # e[0] -> file name, e[1] -> file url
-    for e in data:
-        processThread = threading.Thread(target=downloadFile, args=(e[0], e[1], download_dir))
-        processThread.start()
+    
+    # for e in data:
+    #     processThread = threading.Thread(target=downloadFile, args=(e, data[e], download_dir))
+    #     processThread.start()
+
+    with ThreadPoolExecutor(max_workers=None) as executor:
+        futures = []
+        for e in data:
+            futures.append(executor.submit(downloadFile, e, data[e], download_dir))
+        
+        # for future in as_completed(futures):
+        #     # print(future.result())
+        #     public_data.update(future.result())
 
     print(f"------> took {(timer() - s_d):4.3f}s")
     return
