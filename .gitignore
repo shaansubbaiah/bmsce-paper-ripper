@@ -9,3 +9,4 @@ pdf_links*
 ripped_pdfs
 # ignore test file
 test.py
+env/

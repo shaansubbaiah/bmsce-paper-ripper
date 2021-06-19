@@ -88,22 +88,23 @@ Example Terminal Output
 
 ```
 Starting Ripper
----> Opening SIXTH SEMESTER
----> Opening COMPUTER SCIENCE AND INFORMATION SCIENCE
-------> Adding 2019-20_SUPPLEMENTARY Papers
----------> page 1 2
-------> Adding 2018-19_SUPPLEMENTARY Papers
----------> page 1 2
-------> Adding 2018-19_SEMESTER_MAKE_UP Papers
----------> page 1
-------> Adding 2018-19_MAIN_EXAMINATION Papers
----------> page 1 2
----> Extracting PUBLIC LINKS
-------> Took 0.117s
----> Exporting CSV
----> Downloading PDFs
-------> Took 0.134s
-Ripped. 💀. Took 8.191s
+Opening SIXTH SEMESTER
+Opening COMPUTER SCIENCE AND INFORMATION SCIENCE
+·· Adding 2019-20_SUPPLEMENTARY Papers
+   ·· pages found: 1, 2 
+·· Adding 2018-19_SUPPLEMENTARY Papers
+   ·· pages found: 1, 2 
+·· Adding 2018-19_SEMESTER_MAKE_UP Papers
+   ·· pages found: 1
+·· Adding 2018-19_MAIN_EXAMINATION Papers
+   ·· pages found: 1, 2 
+Using Extracted Cookie  E6451B1DF1975A32D68EF02313XXXXXX
+Extracting PUBLIC LINKS
+   ·· took 1.339s
+Exporting CSV
+Downloading PDFs
+   ·· took 4.795s
+Ripped 💀. Took 10.563s
 ```
 
 Example folder structure generated

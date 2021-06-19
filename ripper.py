@@ -24,7 +24,7 @@ PASSWORD = 'cse1'
 SEMESTER = 'SIXTH SEMESTER'
 BRANCH = 'COMPUTER SCIENCE'
 # 3 letter course short code eg.'TFC' for 16CS6DCTFC.pdf
-# Leave empty to rip papers for every course 
+# Leave empty to rip papers for every course
 COURSE = ''
 LAST_N_YEARS = 2
 
@@ -44,17 +44,17 @@ def setLinksTargetToSelf():
     )
     for link in links:
         driver.execute_script("arguments[0].target='_self';", link)
-    
+
     return
 
 
 def addPdfLinksToList(exam_name, links_list, course_code):
     pdf_links = driver.find_elements_by_partial_link_text(f'{course_code}.pdf')
     for pdf_link in pdf_links:
-        pdf_filename = (exam_name + '_' + pdf_link.text).strip().replace(' ', '_')
+        pdf_filename = (exam_name + '_' +
+                        pdf_link.text).strip().replace(' ', '_')
         pdf_link_url = pdf_link.get_attribute('href')
 
-        # links_list.append([pdf_filename, pdf_link_url])
         links_list[pdf_filename] = pdf_link_url
     return
 
@@ -72,10 +72,10 @@ def ripper():
 
     username_field = driver.find_element_by_name('loginForm.userName')
     username_field.send_keys(USERNAME)
-    
+
     password_field = driver.find_element_by_name('loginForm.userPassword')
     password_field.send_keys(PASSWORD)
-    
+
     driver.find_element_by_tag_name('button').click()
 
     # check if login was succesful
@@ -86,17 +86,17 @@ def ripper():
     except:
         screamErrorAndQuit('login details are incorrect!')
 
-
-    driver.get(LIBRARY_URL + '/browse/browseSubCategory?link=YnJvd3Nl&catCode=27283950369')
+    driver.get(LIBRARY_URL +
+               '/browse/browseSubCategory?link=YnJvd3Nl&catCode=27283950369')
 
     try:
         semester_category = driver.find_element_by_partial_link_text(SEMESTER)
-        print(f"---> Opening {semester_category.text}")
+        print(f"Opening {semester_category.text}")
         semester_category.click()
-        
+
         try:
             branch_category = driver.find_element_by_partial_link_text(BRANCH)
-            print(f"---> Opening {branch_category.text}")
+            print(f"Opening {branch_category.text}")
             branch_category.click()
 
             # find batch divs eg. '2019 and 2020', '2018 and 2019', etc
@@ -112,7 +112,7 @@ def ripper():
             # iterate through last N years batches links
             for batch_link in batch_links:
                 driver.get(batch_link)
-                
+
                 # extract batch name from the breadcrumb
                 breadcrumb = driver.find_element_by_css_selector('li.active')
                 batch_name = breadcrumb.text.replace(' ', '_').strip()
@@ -126,25 +126,30 @@ def ripper():
                 # save different exam type links
                 exam_links = []
                 for exam in exams:
-                    exam_type = exam.find_element_by_xpath('./div/div/div[2]/div/h2/a')
+                    exam_type = exam.find_element_by_xpath(
+                        './div/div/div[2]/div/h2/a')
                     exam_link_url = exam_type.get_attribute('href')
 
                     # minimize batch name '2018 AND 2019' to '2018-19'
-                    batch_name = (batch_name[:4] + '-' + batch_name[-2:]).strip()
+                    batch_name = (batch_name[:4] +
+                                  '-' + batch_name[-2:]).strip()
                     # minimize exam name 'SEMESTER_END_MAIN_EXAMINATION' to 'MAIN'
-                    exam_type_name = exam_type.text.replace('SEMESTER END', '').replace('EXAMINATIONS', '').strip()
-                    
-                    exam_link_name = (batch_name + '_' + exam_type_name).replace(' ', '_')
+                    exam_type_name = exam_type.text.replace(
+                        'SEMESTER END', '').replace('EXAMINATIONS', '').strip()
+
+                    exam_link_name = (batch_name + '_' +
+                                      exam_type_name).replace(' ', '_')
 
                     exam_links.append([exam_link_name, exam_link_url])
 
                 # iterate through exam type links
                 for exam_link in exam_links:
-                    print(f'------> Adding {exam_link[0]} Papers')
+                    print(f'·· Adding {exam_link[0]} Papers')
                     driver.get(exam_link[1])
 
                     try:
-                        pagination_exists = driver.find_element_by_class_name('pagination')
+                        pagination_exists = driver.find_element_by_class_name(
+                            'pagination')
                         pagination_exists = True
                     except:
                         pagination_exists = False
@@ -152,35 +157,37 @@ def ripper():
                     cur_page = 1
 
                     # add links from the first page
-                    print(f'---------> page {cur_page}', end =" ")
+                    print(f'   ·· pages found: {cur_page}', end="")
                     addPdfLinksToList(exam_link[0], links_list, COURSE)
-                    
+
                     # if pagination exists, iterate, add links from the other pages
                     if pagination_exists:
                         while(True):
                             cur_page += 1
                             try:
-                                next_page = driver.find_element_by_link_text(str(cur_page))
+                                next_page = driver.find_element_by_link_text(
+                                    str(cur_page))
                                 next_page.click()
 
-                                print(cur_page, end =" ")
+                                print(",", cur_page, end=" ")
 
-                                addPdfLinksToList(exam_link[0], links_list, COURSE)
+                                addPdfLinksToList(
+                                    exam_link[0], links_list, COURSE)
                             except:
                                 break
                     print('')
                     # no need to go back a page, urls to the exam types are saved
                     # above, we directly go to them
-                    
+
                 # go back to the list of batches
                 driver.back()
 
         except:
             screamErrorAndQuit(f'Could not find branch matching \"{BRANCH}\"!')
-        
+
     except:
         screamErrorAndQuit(f'Could not find semester matching \"{SEMESTER}\"!')
-    
+
     # return cookies to prevent session expiration errors
     # here, only the jsession id is required
     cookies = driver.get_cookies()
@@ -188,62 +195,50 @@ def ripper():
 
     driver.quit()
 
-    print(links_list)
-    # exit(1)
-
     return links_list, jsession_id
 
 
 def extractPublicLink(file_name, file_url, cookies):
     r = requests.get(file_url, cookies=cookies)
-        
+
     # obtain public link from response
     public_links = re.findall(r'http.+\.pdf', r.text)
-    # print(public_links)
-    # replace non-public with public link
     file_url = public_links[0]
 
-    # return public_links[0]
     return {file_name: file_url}
 
 
 def convertToPublicLinks(data, session_id):
     s_c = timer()
-    print("---> Extracting PUBLIC LINKS")
 
     cookies = {'JSESSIONID': session_id}
-    # print(cookies)
+    print("Using Extracted Cookie ", session_id[:-6]+'XXXXXX')
+    print("Extracting PUBLIC LINKS")
 
-    # e[0] -> file name, e[1] -> non public file url
-    # for e in data:
-    #     processThread = threading.Thread(target=extractPublicLink, args=(e[1], cookies))
-    #     processThread.start()
-    # print('yeyey')
     public_data = {}
     with ThreadPoolExecutor(max_workers=None) as executor:
         futures = []
         for e in data:
-            futures.append(executor.submit(extractPublicLink, e, data[e], cookies))
-        
+            futures.append(executor.submit(
+                extractPublicLink, e, data[e], cookies))
+
         for future in as_completed(futures):
-            # print(future.result())
             public_data.update(future.result())
-    print(f"------> took {(timer() - s_c):4.3f}s")
-    print("public links are:")
-    print(public_data)
-    # exit(1)
+
+    print(f"   ·· took {(timer() - s_c):4.3f}s")
+
     return public_data
 
 
 def exportToCSV(data):
-    print("---> Exporting CSV")
+    print("Exporting CSV")
 
     with open('pdf_links.csv', 'w') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=',')
         for e in data:
-            # print(e)
+            # e -> file name, data[e] -> file url
             csv_writer.writerow([e, data[e]])
-    # exit(1)
+
     return
 
 
@@ -252,43 +247,35 @@ def downloadFile(file_name, file_url, download_dir):
     # '2018-19_MAIN_EXAMINATION_16IS6DCCNS.pdf' to 'CNS'
     folder_name = file_name[-7:-4]
     download_path = os.path.join(download_dir, folder_name)
-    
+
     # make the subject folder if it doesnt exist already
     os.makedirs(download_path, exist_ok=True)
-    
+
     filename = os.path.join(download_path, file_name)
 
     r = requests.get(file_url)
     with open(filename, 'wb') as f:
         f.write(r.content)
-    
+
     return
 
 
 def downloadPdfFiles(data):
     s_d = timer()
-    print("---> Downloading PDFs")
-    
+    print("Downloading PDFs")
+
     dir = os.path.dirname(__file__)
     download_dir = os.path.join(dir, 'ripped_pdfs')
     os.makedirs(download_dir, exist_ok=True)
 
-    # e[0] -> file name, e[1] -> file url
-    
-    # for e in data:
-    #     processThread = threading.Thread(target=downloadFile, args=(e, data[e], download_dir))
-    #     processThread.start()
-
     with ThreadPoolExecutor(max_workers=None) as executor:
         futures = []
+        # e -> file name, data[e] -> file url
         for e in data:
-            futures.append(executor.submit(downloadFile, e, data[e], download_dir))
-        
-        # for future in as_completed(futures):
-        #     # print(future.result())
-        #     public_data.update(future.result())
+            futures.append(executor.submit(
+                downloadFile, e, data[e], download_dir))
 
-    print(f"------> took {(timer() - s_d):4.3f}s")
+    print(f"   ·· took {(timer() - s_d):4.3f}s")
     return
 
 
@@ -304,11 +291,11 @@ def main():
     # This function extracts the public urls before saving to CSV
     public_link_data = convertToPublicLinks(data, session_id)
 
-    exportToCSV(public_link_data) 
+    exportToCSV(public_link_data)
 
     downloadPdfFiles(public_link_data)
 
-    print(f'Ripped. 💀. Took {(timer() - s_m):4.3f}s')
+    print(f'Ripped 💀. Took {(timer() - s_m):4.3f}s')
 
 
 if __name__ == "__main__":
@@ -319,7 +306,7 @@ if __name__ == "__main__":
 # ░█▀▀░▄▀▄░░█░░█▀▄░█▀█
 # ░▀▀▀░▀░▀░░▀░░▀░▀░▀░▀
 
-### Valid branch parameters:
+# Valid branch parameters:
 # ARCHITECTURE
 # BIOTECHNOLOGY
 # CHEMICAL ENGINEERING
@@ -333,7 +320,7 @@ if __name__ == "__main__":
 # MEDICAL ELECTRONICS
 # TELECOMMUNICATION ENGINEERING
 
-### Valid semester parameters:
+# Valid semester parameters:
 # FIRST SEMESTER
 # SECOND SEMESTER
 # THIRD SEMESTER
@@ -343,7 +330,7 @@ if __name__ == "__main__":
 # SEVENTH SEMESTER
 # EIGHT SEMESTER
 
-### UNSUPPORTED semester parameters:
+# UNSUPPORTED semester parameters:
 # MATHEMATICS QUESTION PAPERS
 # MBA QUESTION PAPERS
 # MCA AUTONOMOUS QUESTION PAPERS
