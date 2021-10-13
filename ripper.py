@@ -26,7 +26,10 @@ BRANCH = 'COMPUTER SCIENCE'
 # 3 letter course short code eg.'TFC' for 16CS6DCTFC.pdf
 # Leave empty to rip papers for every course
 COURSE = ''
-LAST_N_YEARS = 2
+LAST_N_YEARS = 3
+
+# Enable to include the entire course name in the files and folder
+LONG_FILE_NAMES = True
 
 # set webdriver to browser you intend to run this on
 driver = webdriver.Chrome(executable_path='chromedriver')
@@ -49,14 +52,24 @@ def setLinksTargetToSelf():
 
 
 def addPdfLinksToList(exam_name, links_list, course_code):
-    pdf_links = driver.find_elements_by_partial_link_text(f'{course_code}.pdf')
-    for pdf_link in pdf_links:
-        pdf_filename = (exam_name + '_' +
-                        pdf_link.text).strip().replace(' ', '_')
-        pdf_link_url = pdf_link.get_attribute('href')
+    # function returns a dict where key(pdf file name) corresponds to value(pdf url and folder name)
+    table_rows = driver.find_elements_by_xpath('//*[@id="tab1"]/tbody/tr')
 
-        links_list[pdf_filename] = pdf_link_url
-    return
+    for table_row in table_rows:
+        table_columns = table_row.find_elements_by_tag_name('td')
+
+        course_name = table_columns[2].text.strip().replace(
+            ' ', '_').replace('.', '')
+        course_code = table_columns[4].text.strip().replace(' ', '_')[:-4]
+        folder_name = '_'.join([course_code, course_name])
+        pdf_filename = '_'.join([exam_name, course_name, course_code])
+
+        pdf_link_url = table_columns[4].find_element_by_tag_name(
+            'a').get_attribute('href')
+
+        links_list[pdf_filename] = [pdf_link_url, folder_name]
+
+    return links_list
 
 
 def screamErrorAndQuit(msg):
@@ -198,14 +211,17 @@ def ripper():
     return links_list, jsession_id
 
 
-def extractPublicLink(file_name, file_url, cookies):
+def extractPublicLink(file_name, file_url, folder_name, cookies):
+    # Function doesn't need all the passed variables but it makes tracking
+    # the finished threads easier
+
     r = requests.get(file_url, cookies=cookies)
 
     # obtain public link from response
     public_links = re.findall(r'http.+\.pdf', r.text)
-    file_url = public_links[0]
+    public_file_url = public_links[0]
 
-    return {file_name: file_url}
+    return {file_name: [public_file_url, folder_name]}
 
 
 def convertToPublicLinks(data, session_id):
@@ -219,8 +235,9 @@ def convertToPublicLinks(data, session_id):
     with ThreadPoolExecutor(max_workers=None) as executor:
         futures = []
         for e in data:
+            # e -> file name, data[e][0] -> file url, data[e][1] -> folder name to store it
             futures.append(executor.submit(
-                extractPublicLink, e, data[e], cookies))
+                extractPublicLink, e, data[e][0], data[e][1], cookies))
 
         for future in as_completed(futures):
             public_data.update(future.result())
@@ -236,16 +253,13 @@ def exportToCSV(data):
     with open('pdf_links.csv', 'w') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=',')
         for e in data:
-            # e -> file name, data[e] -> file url
-            csv_writer.writerow([e, data[e]])
+            # e -> file name, data[e][0] -> file url, data[e][1] -> folder name to store it
+            csv_writer.writerow([e, data[e][0]])
 
     return
 
 
-def downloadFile(file_name, file_url, download_dir):
-    # extract subject/folder name from filename
-    # '2018-19_MAIN_EXAMINATION_16IS6DCCNS.pdf' to 'CNS'
-    folder_name = file_name[-7:-4]
+def downloadFile(file_name, file_url, folder_name, download_dir):
     download_path = os.path.join(download_dir, folder_name)
 
     # make the subject folder if it doesnt exist already
@@ -254,7 +268,7 @@ def downloadFile(file_name, file_url, download_dir):
     filename = os.path.join(download_path, file_name)
 
     r = requests.get(file_url)
-    with open(filename, 'wb') as f:
+    with open(filename+'.pdf', 'wb') as f:
         f.write(r.content)
 
     return
@@ -265,15 +279,15 @@ def downloadPdfFiles(data):
     print("Downloading PDFs")
 
     dir = os.path.dirname(__file__)
-    download_dir = os.path.join(dir, 'ripped_pdfs')
+    download_dir = os.path.join(dir, 'RIPPED_PAPERS')
     os.makedirs(download_dir, exist_ok=True)
 
     with ThreadPoolExecutor(max_workers=None) as executor:
         futures = []
-        # e -> file name, data[e] -> file url
+        # e -> file name, data[e][0] -> file url, data[e][1] -> folder name to store it
         for e in data:
             futures.append(executor.submit(
-                downloadFile, e, data[e], download_dir))
+                downloadFile, e, data[e][0], data[e][1], download_dir))
 
     print(f"   ·· took {(timer() - s_d):4.3f}s")
     return
@@ -295,7 +309,8 @@ def main():
 
     downloadPdfFiles(public_link_data)
 
-    print(f'Ripped 💀. Took {(timer() - s_m):4.3f}s')
+    print(f'💀 Ripped {len(public_link_data)} files. \
+        \nTook {(timer() - s_m):4.3f}s.')
 
 
 if __name__ == "__main__":
