@@ -60,7 +60,8 @@ def addPdfLinksToList(exam_name, links_list, course_code):
 
         course_name = table_columns[2].text.strip().replace(
             ' ', '_').replace('.', '')
-        course_code = table_columns[4].text.strip().replace(' ', '_')[:-4]
+        course_code = table_columns[4].text.strip().replace(
+            ' ', '').replace('_', '')[:-4]
         folder_name = '_'.join([course_code, course_name])
         pdf_filename = '_'.join([exam_name, course_name, course_code])
 
