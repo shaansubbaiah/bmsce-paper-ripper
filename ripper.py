@@ -26,7 +26,7 @@ BRANCH = 'COMPUTER SCIENCE'
 # 3 letter course short code eg.'TFC' for 16CS6DCTFC.pdf
 # Leave empty to rip papers for every course
 COURSE = ''
-LAST_N_YEARS = 10
+LAST_N_YEARS = 5
 
 # Enable to include the entire course name in the files and folder
 LONG_FILE_NAMES = True
@@ -60,15 +60,21 @@ def addPdfLinksToList(exam_name, links_list, specific_course):
 
         course_name = table_columns[2].text.strip().replace(
             ' ', '_').replace('.', '')
+
         course_code = table_columns[4].text.strip().replace(
             ' ', '').replace('_', '')[:-4]
-        folder_name = '_'.join([course_code, course_name])
+
+        if LONG_FILE_NAMES is True:
+            folder_name = '_'.join([course_code, course_name])
+        else:
+            folder_name = course_name
+
         pdf_filename = '_'.join([exam_name, course_name, course_code])
 
         pdf_link_url = table_columns[4].find_element_by_tag_name(
             'a').get_attribute('href')
 
-        if len(specific_course) > 0  and specific_course in course_code:
+        if (len(specific_course) > 0 and specific_course in course_code) or len(specific_course) == 0:
             links_list[pdf_filename] = [pdf_link_url, folder_name]
 
     return links_list
