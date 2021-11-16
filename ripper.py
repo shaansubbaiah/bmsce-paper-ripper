@@ -21,12 +21,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 LIBRARY_URL = 'http://103.40.80.24:8080'
 USERNAME = 'cse1'
 PASSWORD = 'cse1'
-SEMESTER = 'FIFTH SEMESTER'
+SEMESTER = 'EIGHT SEMESTER'
 BRANCH = 'COMPUTER SCIENCE'
 # 3 letter course short code eg.'TFC' for 16CS6DCTFC.pdf
 # Leave empty to rip papers for every course
 COURSE = ''
-LAST_N_YEARS = 3
+LAST_N_YEARS = 10
 
 # Enable to include the entire course name in the files and folder
 LONG_FILE_NAMES = True
@@ -51,7 +51,7 @@ def setLinksTargetToSelf():
     return
 
 
-def addPdfLinksToList(exam_name, links_list, course_code):
+def addPdfLinksToList(exam_name, links_list, specific_course):
     # function returns a dict where key(pdf file name) corresponds to value(pdf url and folder name)
     table_rows = driver.find_elements_by_xpath('//*[@id="tab1"]/tbody/tr')
 
@@ -68,7 +68,8 @@ def addPdfLinksToList(exam_name, links_list, course_code):
         pdf_link_url = table_columns[4].find_element_by_tag_name(
             'a').get_attribute('href')
 
-        links_list[pdf_filename] = [pdf_link_url, folder_name]
+        if len(specific_course) > 0  and specific_course in course_code:
+            links_list[pdf_filename] = [pdf_link_url, folder_name]
 
     return links_list
 
