@@ -7,6 +7,10 @@
   Saves around 7+5*(3*15) = 232 clicks on average when trying to download the last 5 years papers for a particular subject of a branch.
 </p>
 
+### ! Update !
+
+-  The e-library portal can now only be accessed from within the library via systems connected to the intranet. You'll have to run this script on one of the systems inside the library to download in bulk. :/
+
 ### New in V1.2
 
 -  Makes it easier to find courses that have moved up or down a semester by ripping papers and storing with the entire course name. 
