@@ -9,11 +9,11 @@
 
 ### ! Update !
 
--  The e-library portal can now only be accessed from within the library via systems connected to the intranet. You'll have to run this script on one of the systems inside the library to download in bulk. :/
+- The e-library portal can now only be accessed from within the library via systems connected to the intranet. You'll have to run this script on one of the systems inside the library to download in bulk. :/
 
 ### New in V1.2
 
--  Makes it easier to find courses that have moved up or down a semester by ripping papers and storing with the entire course name. 
+- Makes it easier to find courses that have moved up or down a semester by ripping papers and storing with the entire course name.
 
 ### New in V1.1
 
@@ -41,9 +41,9 @@
 ## Setup
 
 1. Clone the repo `git clone https://github.com/shaansubbaiah/bmsce-paper-ripper.git`
-1. Run `pip install -r requirements.txt`
-1. Download chromedriver from https://chromedriver.chromium.org/downloads
-1. Extract it and put it in the /bmsce-paper-ripper directory
+1. Run `python -m venv env` # Create a new python virtual environment
+1. Run `source ./env/bin/activate` # Use that environment
+1. Run `pip install -r requirements.txt` # Install dependencies
 1. Set the COURSE, BRANCH, SEMESTER, etc values in `ripper.py`
 1. Run `python ripper.py`
 
@@ -103,20 +103,20 @@ Opening COMPUTER SCIENCE AND INFORMATION SCIENCE
 ·· Adding 2020-21_GRADE_IMPROVEMENT Papers
    ·· pages found: 1
 ·· Adding 2019-20_SUPPLEMENTARY Papers
-   ·· pages found: 1, 2 
+   ·· pages found: 1, 2
 ·· Adding 2018-19_SUPPLEMENTARY Papers
-   ·· pages found: 1, 2 
+   ·· pages found: 1, 2
 ·· Adding 2018-19_SEMESTER_MAKE_UP Papers
    ·· pages found: 1
 ·· Adding 2018-19_MAIN_EXAMINATION Papers
-   ·· pages found: 1, 2 
+   ·· pages found: 1, 2
 Using Extracted Cookie  C4A5AE44D547F542A0CA8C25DFXXXXXX
 Extracting PUBLIC LINKS
    ·· took 0.430s
 Exporting CSV
 Downloading PDFs
    ·· took 5.091s
-💀 Ripped 58 files.         
+💀 Ripped 58 files.
 Took 13.201s.
 ```
 

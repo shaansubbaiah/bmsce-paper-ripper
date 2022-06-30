@@ -32,7 +32,7 @@ LAST_N_YEARS = 10
 LONG_FILE_NAMES = True
 
 # set webdriver to browser you intend to run this on
-driver = webdriver.Chrome(executable_path='chromedriver')
+driver = webdriver.Chrome()
 # driver = webdriver.Firefox()
 
 
