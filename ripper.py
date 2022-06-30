@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # configuration options
 # see valid config in the README/ bottom of this file
-LIBRARY_URL = 'http://103.40.80.24:8080'
+LIBRARY_URL = 'http://10.40.4.17:8080/DLClient6'
 USERNAME = 'cse1'
 PASSWORD = 'cse1'
 SEMESTER = 'EIGHT SEMESTER'
@@ -26,7 +26,7 @@ BRANCH = 'COMPUTER SCIENCE'
 # 3 letter course short code eg.'TFC' for 16CS6DCTFC.pdf
 # Leave empty to rip papers for every course
 COURSE = ''
-LAST_N_YEARS = 5
+LAST_N_YEARS = 10
 
 # Enable to include the entire course name in the files and folder
 LONG_FILE_NAMES = True
