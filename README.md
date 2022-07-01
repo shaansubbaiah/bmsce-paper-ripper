@@ -9,7 +9,7 @@
 
 ### ! Update !
 
-- The e-library portal can now only be accessed from within the library via systems connected to the intranet. You'll have to run this script on one of the systems inside the library to download in bulk. :/
+- The e-library portal can now only be accessed from within the intranet. You'll have to run this script on a system connected to the college wifi or inside the library to download in bulk. :/
 
 ### New in V1.2
 
